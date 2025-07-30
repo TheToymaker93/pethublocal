@@ -15,7 +15,6 @@ import dns.resolver
 import sys
 import codecs
 import urllib3
-import pkg_resources
 
 from pygments import highlight
 from pygments.lexers import JsonLexer
@@ -26,6 +25,7 @@ from .message import parse_hub
 from .consts import *
 from . import log
 from .enums import *
+from importlib.resources import files
 
 # Disable annoying urllib HTTPS Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -1262,7 +1262,7 @@ def build_firmware(xor_key, serial_number):
     firmware = f'{serial_number}-{FIRMWAREVERSION}-00.bin'
     if not os.path.isfile(firmware):
         log.info('Firmware: Building version %s firmware', str(FIRMWAREVERSION))
-        package_dir = pkg_resources.resource_filename('pethublocal', "firmware")
+        package_dir = files("pethublocal") / "firmware"
         # Find the number of records / pages based on FIRMWAREVERSION
         with open(f'{package_dir}/Firmware-{FIRMWAREVERSION}-00.bin', 'rb') as f:
             headersplit = f.read(36).decode("utf-8").split()

@@ -39,10 +39,10 @@ from .consts import (
     MQTTSLEEP,
     FIRMWAREVERSION
 )
+from importlib.resources import files
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
-import pkg_resources
 logging.basicConfig(
     level=LOGLEVEL,
 )
@@ -118,9 +118,9 @@ async def https_app(pet_hub_config):
     cert = config['Web']['Cert']
     cert_key = config['Web']['CertKey']
     if not os.path.isfile(cert):
-        package_dir = pkg_resources.resource_filename('pethublocal', "static")
-        cert = package_dir + '/' + cert
-        cert_key = package_dir + '/' + cert_key
+        package_dir = files("pethublocal") / "static"
+        cert = str(package_dir / cert)
+        cert_key = str(package_dir / cert_key)
     ssl_context.load_cert_chain(cert, cert_key)
     app_s = web.Application()
     app_s['pethubconfig'] = pet_hub_config
@@ -417,7 +417,7 @@ def serve_pet_hub():
     app.router.add_post('/api/firmware', firmware)
     app.router.add_get('/pethubconfig', pethubconfig)
     app.router.add_route('*', '/', root_handler)
-    app.router.add_static('/', pkg_resources.resource_filename('pethublocal', "static"))
+    app.router.add_static('/', str(files("pethublocal") / "static"))
     app.on_startup.append(start_tasks)
     log.info("Starting HTTP Server")
     web.run_app(
