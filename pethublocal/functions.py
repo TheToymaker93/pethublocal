@@ -363,6 +363,10 @@ def config_load(setup=False, force=False):
                     start.merge_update(download_start(config))
                 if len(start) > 1:
                     log.info('Start downloaded, saving base config %s', start.to_json())
+                    continue_setup = input('Continue with setup using this start file? If you need to make changes to it before applying to the config, now is the time to do so. Press Y to continue or N to make changes')
+                    if len(continue_setup) > 0 and continue_setup[0].upper() == 'N':
+                        log.info('Exiting setup, please edit the start file %s and re-run', config.Config.Cloud.StartJSON)
+                        sys.exit(0)
                     config.merge_update(start_to_pethubconfig(config, start))
                     config_save(config)
                     log.info('Start parsed and saved to config')
@@ -555,9 +559,10 @@ def start_to_pethubconfig(config, data):
         log.error("No devices found in payload from SurePetCare. Make sure you have a hub and accessory registered to your account. \n"
                   "You may not wish to connect your V1 hub to the internet for this, it may result in a firmware upgrade that breaks this project. \n"
                   "My only suggestion is to use a V2 hub and temporarily pair it with your accessories. That will generate the correct config in the cloud. \n"
-                  "After that, manually update the config in the start.json file to replace the references to the V2 hub with the V1 hub. \n"
-                  "In particular, the serial number and MAC address of the V1 hub. Though there may be other differences, go through it line by line. \n"
-                  "Come back here and run the PetHubLocal setup again to generate the config file from the updated start.json file.")
+                  "After that, come back here and start the cloud set up again. Select to download a new start file. When given the option, exit the set up. "
+                  "Then, manually update the start.json file to replace the references to the V2 hub with the V1 hub. Essentially pretending this was what was pulled from the cloud. \n"
+                  "Then, come back once more and run the PetHubLocal setup. This time, say to NOT download a new start file and the installer will use the one you just updated. \n"
+                  "In particular, the serial number and MAC address of the V1 hub will need updating in the start file. There may be other differences, go through it line by line.")
         sys.exit(1)
 
     # Parent Serial Number, assumption this is always the first device serial number.
