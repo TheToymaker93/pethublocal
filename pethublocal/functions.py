@@ -361,7 +361,7 @@ def config_load(setup=False, force=False):
                         start = Box.from_json(filename=config.Config.Cloud.StartJSON)
                 if 'StartJSON' not in config.Config.Cloud:
                     start.merge_update(download_start(config))
-                if len(start) > 1:
+                if len(start.data) > 5:
                     log.info('Start downloaded, saving base config %s', start.to_json())
                     continue_setup = input('Continue with setup using this start file? If you need to make changes to it before applying to the config, now is the time to do so. Press Y to continue or N to make changes')
                     if len(continue_setup) > 0 and continue_setup[0].upper() == 'N':
