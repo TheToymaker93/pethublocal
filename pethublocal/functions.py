@@ -362,7 +362,7 @@ def config_load(setup=False, force=False):
                 if 'StartJSON' not in config.Config.Cloud:
                     start.merge_update(download_start(config))
                 if len(start) > 1:
-                    # log.info('Start downloaded, saving base config %s', start.to_json())
+                    log.info('Start downloaded, saving base config %s', start.to_json())
                     config.merge_update(start_to_pethubconfig(config, start))
                     config_save(config)
                     log.info('Start parsed and saved to config')
@@ -377,13 +377,25 @@ def config_load(setup=False, force=False):
                                     firmware = str(key.Device.Firmware)
                                     log.info('Downloading Current Firmware for %s', serial_number)
                                     log.info(download_firmware(serial_number, force))
-                                    if firmware != "2.43":
-                                        log.info("Your device has been upgraded to version %s and since it isn't running 2.43 this version "
+                                    try:
+                                        before_decimal = int(firmware.split('.')[0])
+                                        after_decimal = int(firmware.split('.')[1])
+                                        if (before_decimal == 2 and after_decimal > 201) or before_decimal > 2:
+                                            log.info("I'm sorry to say that you are running version %s. "
+                                                     "firmware after version 2.201 does not work with this project thanks to SurePet. "
+                                                     "Whatsmore, there is currently no way to downgrade the firmware from this level.", firmware)
+                                            sys.exit(1)
+                                        if before_decimal == 2 and after_decimal > 43:
+                                            log.info("Your device has been upgraded to version %s. Since it isn't running 2.43 "
                                                  "the Hub now checks the server certificate is legitimate before connecting (boo! :( ) "
-                                                 "so you will need to downgrade the hub to 2.43 which for the moment is easy as holding "
+                                                 "Fortunately, your firmware DOES support downgrading to 2.43 which for the moment is easy as holding "
                                                  "the reset button underneath the hub when the DNS is poisoned to point to PetHubLocal (Yay!)", firmware)
+                                    except (IndexError, ValueError):
+                                        log.info(f"Could not parse firmware version: {firmware}")
+
                                         # Find the XOR Key and Long Serial aka Certificate Password based off firmware
                                         xor_key, long_serial = find_firmware_xor_key(serial_number, BOOTLOADER)
+                                        log.info('XOR Key: %s Long Serial: %s', xor_key, long_serial)
                                         config.merge_update({'Devices': {hubs:{dev:{
                                             'XOR_Key': xor_key,
                                             'Long_Serial': long_serial
@@ -400,6 +412,14 @@ def config_load(setup=False, force=False):
                         if len(mqtt_broker_ip) > 0:
                             config.merge_update({'Config':{'MQTT':{'Host': mqtt_broker_ip}}})
                             log.info('Broker IP Updated to: %s', mqtt_broker_ip)
+                        mqtt_custom_credentials = input('Does your MQTT Broker need a username and password to connect on 1883? Y/N ')
+                        if len(mqtt_custom_credentials) > 0 and mqtt_custom_credentials[0].upper() == 'Y':
+                            mqtt_client_username = input('MQTT Client Username:')
+                            mqtt_client_password = input('MQTT Client Password:')
+                            if len(mqtt_broker_ip) > 0:
+                                config.merge_update({'Config':{'MQTT':{'ClientUsername': mqtt_client_username}}})
+                                config.merge_update({'Config':{'MQTT':{'ClientPassword': mqtt_client_password}}})
+                                log.info('Broker Username and password updated to: %s and %s', mqtt_client_username, mqtt_client_password)
                     else:
                         config.merge_update({'Config': {'MQTT': {'Host': '127.0.0.1'}}})
                     config_save(config)
