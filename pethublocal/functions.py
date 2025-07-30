@@ -377,31 +377,31 @@ def config_load(setup=False, force=False):
                                     firmware = str(key.Device.Firmware)
                                     log.info('Downloading Current Firmware for %s', serial_number)
                                     log.info(download_firmware(serial_number, force))
+                                    # Find the XOR Key and Long Serial aka Certificate Password based off firmware
+                                    xor_key, long_serial = find_firmware_xor_key(serial_number, BOOTLOADER)
+                                    log.info('XOR Key: %s Long Serial: %s', xor_key, long_serial)
+                                    config.merge_update({'Devices': {hubs:{dev:{
+                                        'XOR_Key': xor_key,
+                                        'Long_Serial': long_serial
+                                    }}}})
                                     try:
                                         before_decimal = int(firmware.split('.')[0])
                                         after_decimal = int(firmware.split('.')[1])
                                         if (before_decimal == 2 and after_decimal > 201) or before_decimal > 2:
-                                            log.info("I'm sorry to say that you are running version %s. "
-                                                     "firmware after version 2.201 does not work with this project thanks to SurePet. "
-                                                     "Whatsmore, there is currently no way to downgrade the firmware from this level.", firmware)
+                                            log.error("I'm sorry to say that you are running version %s. "
+                                                      "firmware after version 2.201 does not work with this project thanks to SurePet.\n"
+                                                      "Whatsmore, there is currently no way to downgrade the firmware from this level.", firmware)
                                             sys.exit(1)
                                         if before_decimal == 2 and after_decimal > 43:
                                             log.info("Your device has been upgraded to version %s. Since it isn't running 2.43 "
-                                                 "the Hub now checks the server certificate is legitimate before connecting (boo! :( ) "
-                                                 "Fortunately, your firmware DOES support downgrading to 2.43 which for the moment is easy as holding "
-                                                 "the reset button underneath the hub when the DNS is poisoned to point to PetHubLocal (Yay!)", firmware)
+                                                     "the Hub now checks the server certificate is legitimate before connecting (boo! :( ) \n"
+                                                     "Fortunately, your firmware DOES support downgrading to 2.43 which for the moment is easy as holding "
+                                                     "the reset button underneath the hub when the DNS is poisoned to point to PetHubLocal (Yay!)", firmware)
+                                            # Build specific 2.43 firmware that doesn't check the SSL Cert for this hub using XOR key
+                                            build_firmware(xor_key, serial_number)
                                     except (IndexError, ValueError):
                                         log.info(f"Could not parse firmware version: {firmware}")
-
-                                        # Find the XOR Key and Long Serial aka Certificate Password based off firmware
-                                        xor_key, long_serial = find_firmware_xor_key(serial_number, BOOTLOADER)
-                                        log.info('XOR Key: %s Long Serial: %s', xor_key, long_serial)
-                                        config.merge_update({'Devices': {hubs:{dev:{
-                                            'XOR_Key': xor_key,
-                                            'Long_Serial': long_serial
-                                        }}}})
-                                        # Build specific 2.43 firmware that doesn't check the SSL Cert for this hub using XOR key
-                                        build_firmware(xor_key, serial_number)
+                                        sys.exit(1)
 
                                     log.info('Downloading Credentials for %s MAC: %s Firmware: %s', serial_number, mac_address, firmware)
                                     log.info(download_credentials(key, serial_number, mac_address, firmware))
@@ -472,13 +472,24 @@ def config_addon(username, password):
                             'XOR_Key': xor_key,
                             'Long_Serial': long_serial
                         }}}})
-                        if firmware != "2.43":
-                            log.info("Your device has been upgraded to version %s and since it isn't running 2.43 this version "
-                                     "the Hub now checks the server certificate is legitimate before connecting (boo! :( ) "
-                                     "so you will need to downgrade the hub to 2.43 which for the moment is easy as holding "
-                                     "the reset button underneath the hub when the DNS is poisoned to point to PetHubLocal (Yay!)", firmware)
-                            # Build specific 2.43 firmware that doesn't check the SSL Cert for this hub using XOR key
-                            build_firmware(xor_key, serial_number)
+                        try:
+                            before_decimal = int(firmware.split('.')[0])
+                            after_decimal = int(firmware.split('.')[1])
+                            if (before_decimal == 2 and after_decimal > 201) or before_decimal > 2:
+                                log.error("I'm sorry to say that you are running version %s. "
+                                          "firmware after version 2.201 does not work with this project thanks to SurePet.\n"
+                                          "Whatsmore, there is currently no way to downgrade the firmware from this level.", firmware)
+                                sys.exit(1)
+                            if before_decimal == 2 and after_decimal > 43:
+                                log.info("Your device has been upgraded to version %s. Since it isn't running 2.43 "
+                                         "the Hub now checks the server certificate is legitimate before connecting (boo! :( )\n"
+                                         "Fortunately, your firmware DOES support downgrading to 2.43 which for the moment is easy as holding "
+                                         "the reset button underneath the hub when the DNS is poisoned to point to PetHubLocal (Yay!)", firmware)
+                                # Build specific 2.43 firmware that doesn't check the SSL Cert for this hub using XOR key
+                                build_firmware(xor_key, serial_number)
+                        except (IndexError, ValueError):
+                            log.info(f"Could not parse firmware version: {firmware}")
+                            sys.exit(1)
                         log.info('Downloading Credentials for %s MAC: %s Firmware: %s', serial_number, mac_address, firmware)
                         log.info(download_credentials(key, serial_number, mac_address, firmware))
 
@@ -539,6 +550,15 @@ def start_to_pethubconfig(config, data):
 
     # Tags box
     tags = data.tags
+
+    if data.devices is None or len(data.devices) == 0:
+        log.error("No devices found in payload from SurePetCare. Make sure you have a hub and accessory registered to your account. \n"
+                  "You may not wish to connect your V1 hub to the internet for this, it may result in a firmware upgrade that breaks this project. \n"
+                  "My only suggestion is to use a V2 hub and temporarily pair it with your accessories. That will generate the correct config in the cloud. \n"
+                  "After that, manually update the config in the start.json file to replace the references to the V2 hub with the V1 hub. \n"
+                  "In particular, the serial number and MAC address of the V1 hub. Though there may be other differences, go through it line by line. \n"
+                  "Come back here and run the PetHubLocal setup again to generate the config file from the updated start.json file.")
+        sys.exit(1)
 
     # Parent Serial Number, assumption this is always the first device serial number.
     parent_serial = data.devices[0].serial_number
