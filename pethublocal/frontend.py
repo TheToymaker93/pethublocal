@@ -342,7 +342,7 @@ async def parse_message(client, app, messages):
     async for message in messages:
         if message.topic.startswith(PH_HUB_T) or message.topic.startswith(PH_HA_T):
             parsed_result = parse_mqtt_message(app['pethubconfig'], message.topic, message.payload.decode())
-            await sio.emit('web_message', data=parsed_result, broadcast=True, include_self=False)
+            await sio.emit('web_message', data=parsed_result)
             if 'HubMessage' in parsed_result:
                 log.debug('ToHub: Parsed Message %s', parsed_result['HubMessage'])
                 for hub_message in parsed_result['HubMessage']:
@@ -357,7 +357,6 @@ async def parse_message(client, app, messages):
 
         if message.topic.startswith('pethub/in'):
             print('emit message', message.payload.decode())
-            # await sio.emit('web_state', data=message.payload.decode(), broadcast=True, include_self=False)
 
 
 async def cancel_tasks(tasks):
