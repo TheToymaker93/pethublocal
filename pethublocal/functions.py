@@ -361,7 +361,7 @@ def config_load(setup=False, force=False):
                         start = Box.from_json(filename=config.Config.Cloud.StartJSON)
                 if 'StartJSON' not in config.Config.Cloud:
                     start.merge_update(download_start(config))
-                if len(start) > 5:
+                if len(start) > 1:
                     # log.info('Start downloaded, saving base config %s', start.to_json())
                     config.merge_update(start_to_pethubconfig(config, start))
                     config_save(config)
