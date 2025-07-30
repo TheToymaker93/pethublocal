@@ -552,7 +552,7 @@ def start_to_pethubconfig(config, data):
                 if key in control_fields:
                     device_result.merge_update({key.title(): val})
             if 'version' in device:
-                device_result.merge_update({'Main_Version': str(base64.b64decode(device.version).decode('utf-8'))})
+                device_result.merge_update({'Main_Version': str(device.version)})
 
             # Pet Door or Cat Flap
             if device.product_id in [3, 6]:
