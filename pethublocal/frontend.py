@@ -320,6 +320,7 @@ async def hub_watchdog(app):
         update_watchdog()		# Reload Watchdog timer with current time
       await asyncio.sleep(check_interval)
 
+
 # Monitor the LookedIn state of pets
 # If a pet is in the LookedIn state for more than 20 seconds, reset it to Outside
 # This helps to ensure that Home Assistant gets nice updates each time they look in.
@@ -365,6 +366,7 @@ async def clear_lookedin_state(app):
                 log.warning("MQTT client not available, cannot update Home Assistant")
         
         await asyncio.sleep(check_interval)
+
 
 async def queue_mqtt(client, app):
     log.info("Client: Start")

@@ -797,6 +797,41 @@ def ha_init_entities(pethubconfig):
                     mqtt_messages.merge_update({
                         HA_SWITCH + devidkey + '/config': config_message.to_json()
                     })
+                customModes = [
+                    {"key": PetDoorCustomMode.Disabled.name, "custIcon": "mdi:cancel"},
+                    {"key": PetDoorCustomMode.NonSelective.name, "custIcon": "mdi:door-sliding-open"},
+                    {"key": PetDoorCustomMode.Rechargeables.name, "custIcon": "mdi:battery"},
+                    {"key": PetDoorCustomMode.ThreeSeconds.name, "custIcon": "mdi:timer-3"},
+                    {"key": PetDoorCustomMode.TenSeconds.name, "custIcon": "mdi:timer-10"},
+                    {"key": PetDoorCustomMode.Intruder.name, "custIcon": "mdi:shark-off"},
+                    {"key": PetDoorCustomMode.OppositeCurfew.name, "custIcon": "mdi:clock-end"},
+                    {"key": PetDoorCustomMode.LockedCurfew.name, "custIcon": "mdi:lock-clock"},
+                    {"key": PetDoorCustomMode.MetalMode1.name, "custIcon": "mdi:shield"},
+                    {"key": PetDoorCustomMode.MetalMode2.name, "custIcon": "mdi:shield-outline"},
+                    {"key": PetDoorCustomMode.ExtendedRange.name, "custIcon": "mdi:signal"},
+                    {"key": PetDoorCustomMode.ExtendedIntruder.name, "custIcon": "mdi:shark-off"},
+                    {"key": PetDoorCustomMode.DoubleChip1.name, "custIcon": "mdi:chip"},
+                    {"key": PetDoorCustomMode.DoubleChip2.name, "custIcon": "mdi:chip"},
+                    {"key": PetDoorCustomMode.DoubleChip3.name, "custIcon": "mdi:chip"},
+                    {"key": PetDoorCustomMode.ProximityTest.name, "custIcon": "mdi:radio-tower"}
+                ]
+                for key, custIcon in customModes:
+                    devidkey = devid + '_' + key.lower()
+                    config_message = Box({
+                        'name': attrs.Name + ' ' + key,
+                        'ic': custIcon,
+                        'uniq_id': devidkey,
+                        'stat_t': PH_HA_T + devid + '/state',
+                        'val_tpl': '{{value_json.Custom_Mode}}',
+                        'json_attr_t': PH_HA_T + devid + '/state',
+                        'cmd_t': PH_HA_T + devid + '/custom_mode',
+                        'avty_t': PH_HA_T + devid + '/state',
+                        'avty_tpl': '{{value_json.Availability}}',
+                        'device': device_config
+                    })
+                    mqtt_messages.merge_update({
+                        HA_SWITCH + devidkey + '/config': config_message.to_json()
+                    })
             elif attrs.Product_Id == 4:
                 icon = 'mdi:bowl'
             elif attrs.Product_Id == 8:
