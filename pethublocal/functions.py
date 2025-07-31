@@ -1109,7 +1109,7 @@ def parse_mqtt_message(pethubconfig, mqtt_topic, mqtt_message):
 
         # Pet Door or Cat Flap
         if (pid in [3, 6] and op in ['KeepIn', 'KeepOut']) or (pid == 3 and op == 'Curfew'):
-            if pid == 3 and op == 'Curfew':
+            if pid == 3 and op == 'Curfew' and mqtt_message == "ON":
                 nlm = 4
                 # Set Locking Mode
                 result.append(generatemessage(pethubconfig, hub, pid, 'CURFEWS', mac=mac,
