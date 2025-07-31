@@ -203,6 +203,7 @@ async def start_tasks(app):
     loop.create_task(hub_watchdog(app))
     loop.create_task(clear_lookedin_state(app))
 
+
 async def mqtt_start(app):
     reconnect_interval = 3  # [seconds]
     while True:

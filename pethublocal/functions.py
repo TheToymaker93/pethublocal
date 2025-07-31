@@ -783,7 +783,7 @@ def ha_init_entities(pethubconfig):
                 for key in lockstate:
                     devidkey = devid + '_' + key.lower()
                     config_message = Box({
-                        'name': attrs.Name + ' ' + key,
+                        'name': attrs.Name + ' Mode ' + key,
                         'ic': icon,
                         'uniq_id': devidkey,
                         'stat_t': PH_HA_T + devid + '/state',
@@ -815,10 +815,12 @@ def ha_init_entities(pethubconfig):
                     {"key": PetDoorCustomMode.DoubleChip3.name, "custIcon": "mdi:chip"},
                     {"key": PetDoorCustomMode.ProximityTest.name, "custIcon": "mdi:radio-tower"}
                 ]
-                for key, custIcon in customModes:
+                for mode in customModes:
+                    key = mode["key"]
+                    custIcon = mode["custIcon"]
                     devidkey = devid + '_' + key.lower()
                     config_message = Box({
-                        'name': attrs.Name + ' ' + key,
+                        'name': attrs.Name + ' Cstm Mode ' + key,
                         'ic': custIcon,
                         'uniq_id': devidkey,
                         'stat_t': PH_HA_T + devid + '/state',
