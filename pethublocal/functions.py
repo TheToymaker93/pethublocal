@@ -1109,27 +1109,35 @@ def parse_mqtt_message(pethubconfig, mqtt_topic, mqtt_message):
 
         # Pet Door or Cat Flap
         if (pid in [3, 6] and op in ['KeepIn', 'KeepOut']) or (pid == 3 and op == 'Curfew'):
-            if pid == 3 and op == 'Curfew' and mqtt_message == "ON":
-                nlm = 4
+            # Pet door specific curfew operation
+            if (pid == EntityType.PetDoor and op == 'Curfew' and mqtt_message == "ON"):
+                nlm = LockState.CURFEW
                 # Set Locking Mode
                 result.append(generatemessage(pethubconfig, hub, pid, 'CURFEWS', mac=mac,
                                               suboperation=dev['Curfews']))
-                # print(result.to_json())
             # Going to Lock State 3 - Lock both ways
-            elif (op == "KeepIn" and mqtt_message == "ON" and clm == 2) \
-                    or (op == "KeepOut" and mqtt_message == "ON" and clm == 1):
-                nlm = 3
+            elif (
+                (clm == LockState.KEEPOUT and op == "KeepIn" and mqtt_message == "ON") or # Currently in KeepOut. Turning KeepIn on too will be full lock.
+                (clm == LockState.KEEPIN and op == "KeepOut" and mqtt_message == "ON")    # Currently in KeepIn. Turning KeepOut on too will be full lock.
+            ):
+                nlm = LockState.LOCKED
             # Going to Lock State 2 - Keep pets out
-            elif (op == "KeepIn" and mqtt_message == "OFF" and clm == 3) \
-                    or (op == "KeepOut" and mqtt_message == "ON" and clm == 0):
-                nlm = 2
+            elif (
+                (clm == LockState.LOCKED and op == "KeepIn" and mqtt_message == "OFF") or   # Currently in full lock. Removing KeepIn will be KeepOut.
+                (clm == LockState.UNLOCKED and op == "KeepOut" and mqtt_message == "ON") or # Currently in unlocked. Turning KeepOut on will be KeepOut.
+                (clm == LockState.CURFEW and op == "KeepOut" and mqtt_message == "ON")      # Currently in curfew. Turning KeepOut on will override Curfew and result in KeepOut.
+            ):
+                nlm = LockState.KEEPOUT
             # Going to Lock State 1 - Keep pets in
-            elif (op == "KeepIn" and mqtt_message == "ON" and clm == 0) \
-                    or (op == "KeepOut" and mqtt_message == "OFF" and clm == 3):
-                nlm = 1
+            elif (
+                (clm == LockState.UNLOCKED and op == "KeepIn" and mqtt_message == "ON") or # Currently in unlocked. Turning KeepIn on will be KeepIn.
+                (clm == LockState.LOCKED and op == "KeepOut" and mqtt_message == "OFF") or # Currently in full lock. Removing KeepOut will be KeepIn.
+                (clm == LockState.CURFEW and op == "KeepIn" and mqtt_message == "ON")      # Currently in curfew. Turning KeepIn on will override Curfew and result in KeepIn.
+            ):
+                nlm = LockState.KEEPIN
             # Going to Lock State 0 - Unlocked
             else:
-                nlm = 0
+                nlm = LockState.UNLOCKED
 
             log.info("ToHub: Moving from current lock mode %s to lock mode %s",
                      LockState(clm).name, LockState(nlm).name)
