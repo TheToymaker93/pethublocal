@@ -998,8 +998,8 @@ def ha_update_state(pethubconfig, *devicepet):
                             LockState(attrs.Locking_Mode).name.title()
                         ),
                         'Battery': str(attrs.Battery),
-                        'Keep In': 'ON' if attrs.Locking_Mode in [LockState.KEEPIN, LockState.LOCKED] else 'OFF',
-                        'Keep Out': 'ON' if attrs.Locking_Mode in [LockState.KEEPOUT, LockState.LOCKED] else 'OFF',
+                        'KeepIn': 'ON' if attrs.Locking_Mode in [LockState.KEEPIN, LockState.LOCKED] else 'OFF',
+                        'KeepOut': 'ON' if attrs.Locking_Mode in [LockState.KEEPOUT, LockState.LOCKED] else 'OFF',
                         'Curfew': 'ON' if curfew else 'OFF',
                         'Curfews': str(attrs.Curfews)
                     })
