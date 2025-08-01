@@ -58,6 +58,12 @@ def valid_hub_mac(mac_address):
     """ Regex check the 802.15.4 MiWi Mac Address is valid """
     return re.match('^0000[0-9A-F]{12}$', mac_address)
 
+def pascal_to_spaced(text):
+    """
+    Convert PascalCase string to spaced string.
+    Example: 'KeepIn' -> 'Keep In'
+    """
+    return re.sub(r'(?<!^)([A-Z])', r' \1', text)
 
 def download_firmware_record(surehubioip, serialnumber, bootloader, page):
     """
@@ -783,7 +789,7 @@ def ha_init_entities(pethubconfig):
                 for key in lockstate:
                     devidkey = devid + '_' + key.lower()
                     config_message = Box({
-                        'name': attrs.Name + ' Mode ' + key,
+                        'name': attrs.Name + ' ' + pascal_to_spaced(key),
                         'ic': icon,
                         'uniq_id': devidkey,
                         'stat_t': PH_HA_T + devid + '/state',
@@ -798,7 +804,6 @@ def ha_init_entities(pethubconfig):
                         HA_SWITCH + devidkey + '/config': config_message.to_json()
                     })
                 customModes = [
-                    {"key": PetDoorCustomMode.Disabled.name, "custIcon": "mdi:cancel"},
                     {"key": PetDoorCustomMode.NonSelective.name, "custIcon": "mdi:door-sliding-open"},
                     {"key": PetDoorCustomMode.Rechargeables.name, "custIcon": "mdi:battery"},
                     {"key": PetDoorCustomMode.ThreeSeconds.name, "custIcon": "mdi:timer-3"},
@@ -820,7 +825,7 @@ def ha_init_entities(pethubconfig):
                     custIcon = mode["custIcon"]
                     devidkey = devid + '_' + key.lower()
                     config_message = Box({
-                        'name': attrs.Name + ' Cstm Mode ' + key,
+                        'name': attrs.Name + ' Custom ' + pascal_to_spaced(key),
                         'ic': custIcon,
                         'uniq_id': devidkey,
                         'stat_t': PH_HA_T + devid + '/state',
@@ -977,7 +982,7 @@ def ha_update_state(pethubconfig, *devicepet):
                     # Curfew state:
                     # Handling the dumb way that the Cat Flap has a curfew mode to toggle between
                     # enabled and the pet door goes to locking mode 4 for curfew.
-                    if attrs.Product_Id == EntityType.PetDoor and attrs.Locking_Mode == LockState.Curfew:
+                    if attrs.Product_Id == EntityType.PetDoor and attrs.Locking_Mode == LockState.CURFEW:
                         curfew = True
                     elif attrs.Product_Id == EntityType.CatFlap and attrs.Curfew_Enabled == 1:
                         curfew = True
@@ -986,10 +991,14 @@ def ha_update_state(pethubconfig, *devicepet):
 
                     state_message = Box({
                         'Availability': attrs.State.lower() if 'State' in attrs else 'offline',
-                        'State': LockState(attrs.Locking_Mode).name.title(),
+                        'State': (
+                            "Keep In" if attrs.Locking_Mode == LockState.KEEPIN else # Make prettier on frontend
+                            "Keep Out" if attrs.Locking_Mode == LockState.KEEPOUT else
+                            LockState(attrs.Locking_Mode).name.title()
+                        ),
                         'Battery': str(attrs.Battery),
-                        'KeepIn': 'ON' if attrs.Locking_Mode in [LockState.KEEPIN, LockState.LOCKED] else 'OFF',
-                        'KeepOut': 'ON' if attrs.Locking_Mode in [LockState.KEEPOUT, LockState.LOCKED] else 'OFF',
+                        'Keep In': 'ON' if attrs.Locking_Mode in [LockState.KEEPIN, LockState.LOCKED] else 'OFF',
+                        'Keep Out': 'ON' if attrs.Locking_Mode in [LockState.KEEPOUT, LockState.LOCKED] else 'OFF',
                         'Curfew': 'ON' if curfew else 'OFF',
                         'Curfews': str(attrs.Curfews)
                     })
