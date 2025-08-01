@@ -2,6 +2,7 @@
  Pet Hub Shared functions
  Copyright (c) 2022, Peter Lambrechtsen (peter@crypt.nz)
 """
+import ast
 from datetime import datetime, timedelta
 import json
 import os
@@ -1002,7 +1003,14 @@ def ha_update_state(pethubconfig, *devicepet):
                         'Curfew': 'ON' if curfew else 'OFF',
                         'Curfews': str(attrs.Curfews)
                     })
-                    if 'Custom_Modes' in attrs:  # Add custom mode
+                    if 'Custom_Modes' in attrs:
+                        try:
+                            custom_modes_str = attrs.Custom_Modes
+                            custom_modes = ast.literal_eval(custom_modes_str)
+                            log.debug(f"Parsed Custom Modes: {custom_modes}")
+                        except Exception as e:
+                            log.error(f"Error parsing Custom_Modes: {e}")
+                            custom_modes = []
                         state_message.merge_update({"CustomMode": attrs.Custom_Modes})
                     mqtt_messages.merge_update({PH_HA_T + devid + '/state': state_message.to_json()})
 

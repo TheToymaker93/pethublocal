@@ -111,6 +111,9 @@ def hex_byte(value):
     """ Convert to byte / two digit hex """
     return f"{int(value):02x}"
 
+def get_enabled_custom_modes(custom_mode: int) -> list[str]:
+    """ Get a list of enabled custom modes from the Pet Door custom mode bitmask. """
+    return [mode.name for mode in PetDoorCustomMode if mode.value & custom_mode]
 
 # Main Parsing Functions
 def parse_hub_frame(pethubrecord, offset, length):
@@ -596,12 +599,13 @@ def parse_door_frame(pethubrecord, hub, device_item, offset, length):
         log.debug("PETDOOR: Register 61-63 - Custom Mode %s", str(message_range))
         operation.append("CustomMode")
         custom_mode = int.from_bytes(registers[61:64], byteorder='big')
-        frame_response.CustomMode = str(custom_mode)
-        frame_response.CustomModes = PetDoorCustomMode(custom_mode).string_array()
+        enabled_modes = get_enabled_custom_modes(custom_mode)
+        log.debug("Enabled Custom Modes: %s", enabled_modes)
+        frame_response.CustomMode = str(custom_mode)    # Store the raw custom mode value as an int
+        frame_response.CustomModes = enabled_modes      # Store the enabled custom modes as a list of human readable strings
         pethubrecord['Custom_Mode'] = str(custom_mode)
-        pethubrecord['Custom_Modes'] = str(frame_response.CustomModes)
-        if custom_mode > 0:
-            update_state = True
+        pethubrecord['Custom_Modes'] = str(enabled_modes)
+        update_state = True
     if offset in range(91, 309):  # Provisioned tags
         log.debug("PETDOOR: Register 91-309 - Provisioned Tags %s", str(message_range))
         operation.append("Tag")

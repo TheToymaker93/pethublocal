@@ -301,7 +301,6 @@ class FeederCustomMode(SureFlag):
 
 class PetDoorCustomMode(SureFlag):
     """ Custom Modes on the Pet Door """
-    Disabled = 0              # All custom modes disabled
     NonSelective = 0x1        # Custom Mode 1 - Non-selective Entry - Unlocks the door inbound so any animal can come in
     Rechargeables = 0x2       # Custom Mode 2 - Rechargeable Batteries so work with lower voltage from 1.2v Rechargeables vs 1.5v Alkaline
     ThreeSeconds = 0x4        # Custom Mode 3 - Timid Pets - 3 Seconds delay before closing door
