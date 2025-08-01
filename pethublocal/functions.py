@@ -745,7 +745,7 @@ def ha_init_entities(pethubconfig):
     for hub, devices in Box(pethubconfig['Devices']).items():
         for device, attrs in devices.items():  # Devices
             # Device ID Value, either _Hub or _mac_address if it's not a hub
-            if attrs.Product_Id == 1:  # Hub
+            if attrs.Product_Id == EntityType.Hub:
                 devid = hub + '_Hub'
             else:
                 devid = hub + '_' + attrs.Mac_Address
@@ -760,7 +760,7 @@ def ha_init_entities(pethubconfig):
             })
 
             # Create Battery sensor apart from hub as hubs don't have a battery
-            if attrs.Product_Id != 1:
+            if attrs.Product_Id != EntityType.Hub:
                 config_message = Box({
                     'name': attrs.Name + ' Battery',
                     'ic': 'mdi:battery',
@@ -774,9 +774,9 @@ def ha_init_entities(pethubconfig):
                 mqtt_messages.merge_update({HA_SENSOR + devid + '_battery/config': config_message.to_json()})
 
             # Device parameters
-            if attrs.Product_Id == 1:
+            if attrs.Product_Id == EntityType.Hub:
                 icon = 'mdi:radio-tower'
-            elif attrs.Product_Id in [3, 6]:
+            elif attrs.Product_Id in [EntityType.PetDoor, EntityType.CatFlap]:
                 icon = 'mdi:door'
                 # Switches for Doors
                 lockstate = ['KeepIn', 'KeepOut', 'Curfew']
@@ -834,9 +834,9 @@ def ha_init_entities(pethubconfig):
                     mqtt_messages.merge_update({
                         HA_SWITCH + devidkey + '/config': config_message.to_json()
                     })
-            elif attrs.Product_Id == 4:
+            elif attrs.Product_Id == EntityType.Feeder:
                 icon = 'mdi:bowl'
-            elif attrs.Product_Id == 8:
+            elif attrs.Product_Id == EntityType.Poseidon:
                 icon = 'mdi:glass-mug'
             else:
                 icon = 'mdi:alien'
@@ -854,7 +854,7 @@ def ha_init_entities(pethubconfig):
             })
             mqtt_messages.merge_update({HA_SENSOR + devid + '/config': config_message.to_json()})
 
-            if attrs.Product_Id in [4, 8]:
+            if attrs.Product_Id in [EntityType.Feeder, EntityType.Poseidon]:
                 # log.debug('HAINIT: %s - Add bowls %s', EntityType(attrs.Product_Id).Name, str(attrs.bowlcount))
                 # Add separate sensors for the weights
                 bowls = {
@@ -952,12 +952,12 @@ def ha_update_state(pethubconfig, *devicepet):
             if (not devicepet) or hub+'_'+device == devicepet[0]:
                 # log.debug('HA: Hub %s Device %s', hub, device)
                 # Device ID Value, either _Hub or _mac_address if it's not a hub
-                if attrs.Product_Id == 1:  # Hub
+                if attrs.Product_Id == EntityType.Hub:
                     devid = hub + '_Hub'
                 else:
                     devid = hub + '_' + attrs['Mac_Address']
 
-                if attrs.Product_Id == 1:  # Hub
+                if attrs.Product_Id == EntityType.Hub:  # Hub
                     state_message = Box({
                         'Availability': attrs.State.lower() if 'State' in attrs else 'offline',
                         'State': attrs.State if 'State' in attrs else 'Offline',
@@ -973,13 +973,13 @@ def ha_update_state(pethubconfig, *devicepet):
                     #     state_message[devs.title()] = version.device[devs]
                     mqtt_messages.merge_update({PH_HA_T + devid + '/state': state_message.to_json()})
 
-                if attrs.Product_Id in [3, 6]:  # Pet Door or Cat Flap
+                if attrs.Product_Id in [EntityType.PetDoor, EntityType.CatFlap]:  # Pet Door or Cat Flap
                     # Curfew state:
                     # Handling the dumb way that the Cat Flap has a curfew mode to toggle between
                     # enabled and the pet door goes to locking mode 4 for curfew.
-                    if attrs.Product_Id == 3 and attrs.Locking_Mode == 4:
+                    if attrs.Product_Id == EntityType.PetDoor and attrs.Locking_Mode == LockState.Curfew:
                         curfew = True
-                    elif attrs.Product_Id == 6 and attrs.Curfew_Enabled == 1:
+                    elif attrs.Product_Id == EntityType.CatFlap and attrs.Curfew_Enabled == 1:
                         curfew = True
                     else:
                         curfew = False
@@ -997,7 +997,7 @@ def ha_update_state(pethubconfig, *devicepet):
                         state_message.merge_update({"CustomMode": attrs.Custom_Modes})
                     mqtt_messages.merge_update({PH_HA_T + devid + '/state': state_message.to_json()})
 
-                if attrs.Product_Id == 4:  # Feeder
+                if attrs.Product_Id == EntityType.Feeder:
                     state_message = Box({
                         'Availability': attrs.State.lower() if 'State' in attrs else 'offline',
                         'State': attrs.Lid_State.title() if 'Lid_State' in attrs else 'Closed',
@@ -1019,7 +1019,7 @@ def ha_update_state(pethubconfig, *devicepet):
                         })
                     mqtt_messages.merge_update({PH_HA_T + devid + '/state': state_message.to_json()})
 
-                if attrs.Product_Id == 8:  # Poseidon
+                if attrs.Product_Id == EntityType.Poseidon:  # Poseidon
                     state_message = Box({
                         'Availability': attrs.State.lower() if 'State' in attrs else 'offline',
                         'State': attrs.State.title() if 'State' in attrs else 'Offline',
