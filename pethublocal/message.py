@@ -605,15 +605,19 @@ def parse_door_frame(pethubrecord, hub, device_item, offset, length):
     if offset in range(91, 309):  # Provisioned tags
         log.debug("PETDOOR: Register 91-309 - Provisioned Tags %s", str(message_range))
         operation.append("Tag")
-        frame_response.TagOffset = str(round((int(offset) - 84) / 7))  # Calculate the tag offset number
-        tag = door_hex_to_tag(registers[offset:offset+7])                  # Calculate tag Number
+        frame_response.TagOffset = str(round((int(offset) - 84) / 7) -1)  # Calculate the tag offset number (0 indexed. This wasn't originally the case, but it matches what's on line 634)
+        tag = door_hex_to_tag(registers[offset:offset+7])                 # Calculate tag Number
         frame_response.Tag = [tag]
         if tag != 'Empty':
+            log.info("Found tag in door message with value of %s at offset %s", tag, frame_response.TagOffset)
             if frame_response.TagOffset in pethubrecord['Tags']:
+                log.info("Matches existing offset")
                 if not pethubrecord['Tags'][frame_response.TagOffset]['Tag'] == tag:
+                    log.info("Updating tag %s at offset %s", tag, frame_response.TagOffset)
                     pethubrecord['Tags'][frame_response.TagOffset] = {"Tag": tag}
                     update_state = True
             else:
+                log.info("Adding new tag %s at offset %s", tag, frame_response.TagOffset)
                 pethubrecord['Tags'][frame_response.TagOffset] = {"Tag": tag}
                 update_state = True
                 New_Tag = True

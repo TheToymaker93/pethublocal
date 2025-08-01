@@ -327,7 +327,7 @@ async def hub_watchdog(app):
 # This helps to ensure that Home Assistant gets nice updates each time they look in.
 async def clear_lookedin_state(app):
     check_interval = 10  # [seconds]
-    state_expiration = 20 # [seconds]
+    state_expiration = 30 # [seconds]
     client = app.get('mqtt_client')
 
     while True:
